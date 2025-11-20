@@ -39,7 +39,7 @@ export const userProfileSchema = z.object({
   height: z.coerce.number().min(50, { message: "Height in cm is required." }), 
   weight: z.coerce.number().min(20, { message: "Weight in kg is required." }), 
 
-  goal: z.enum(fitnessGoals, { errorMap: () => ({ message: "Please select a goal." }) }),
+  goal: z.enum(fitnessGoals),
   level: z.enum(fitnessLevels),
   location: z.enum(workoutLocations),
   dietaryPreference: z.enum(dietaryPreferences),

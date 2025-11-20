@@ -170,10 +170,12 @@ export async function generateSpeechAction(text: string) {
       modelId: "eleven_multilingual_v2",
     });
 
-    const chunks: Buffer[] = [];
-    for await (const chunk of audioStream) {
+    const chunks: any = [];
+    
+    for await (const chunk of (audioStream as any)) {
       chunks.push(Buffer.from(chunk));
     }
+    
     const buffer = Buffer.concat(chunks);
     const base64Audio = buffer.toString("base64");
 
