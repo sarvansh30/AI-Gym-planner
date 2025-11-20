@@ -54,7 +54,7 @@ Follow these steps to run the project locally.
 
 1. Clone the repository
 
-git clone [https://github.com/your-username/ai-fitness-coach.git](https://github.com/your-username/ai-fitness-coach.git)
+git clone [https://github.com/sarvansh30/AI-Gym-planner](https://github.com/sarvansh30/AI-Gym-planner)
 cd ai-fitness-coach
 
 
@@ -70,11 +70,9 @@ yarn install
 Create a .env.local file in the root directory. You need API keys for the AI features to work.
 
 # Google Gemini API Key (Required for Plans & Images)
-# Get it here: [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
 GEMINI_API_KEY=your_google_api_key_here
 
 # ElevenLabs API Key (Required for Audio Features)
-# Get it here: [https://elevenlabs.io/app/settings/api-keys](https://elevenlabs.io/app/settings/api-keys)
 ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
 
 
@@ -100,7 +98,7 @@ Listen: Click the Speaker Icon (Read Workout/Diet) to hear your plan.
 Download: Click "Download PDF" to save a copy.
 
 📂 Project Structure
-
+```
 src/
 ├── app/
 │   ├── actions/          # Server Actions (Gemini & ElevenLabs logic)
@@ -112,7 +110,7 @@ src/
 ├── lib/
 │   └── schemas.ts        # Zod schemas and TS Types
 └── types/                # Global type definitions
-
+```
 
 This is a Next.js project bootstrapped with create-next-app.
 
