@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useReactToPrint } from "react-to-print";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Camera, Dumbbell, Utensils, Sparkles, Volume2, StopCircle } from "lucide-react";
+import { Loader2, Camera, Dumbbell, Utensils, Sparkles, Volume2, StopCircle, Download, FileText } from "lucide-react";
 import { generateImageAction, generateMotivationAction, generateSpeechAction } from "@/app/actions/generate";
 
 // Animation variants
@@ -23,74 +24,75 @@ const item = {
   show: { opacity: 1, y: 0 }
 };
 
+// HELPER: Convert Workout Data to Readable Text
 const formatWorkoutForSpeech = (plan: any[]) => {
-
   if (!plan || !Array.isArray(plan) || plan.length === 0) return "You have no workouts scheduled.";
-  
   const day = plan[0];
-  
   if (!day) return "Workout data is incomplete.";
-
   let script = `Here is your workout plan for ${day.day || "Day 1"}. The focus is ${day.focus || "General Fitness"}. `;
-  
   if (day.exercises && Array.isArray(day.exercises)) {
     day.exercises.forEach((ex: any, i: number) => {
       script += `Exercise ${i + 1}: ${ex.name}. Do ${ex.sets} sets of ${ex.reps} repetitions. `;
       if (ex.notes) script += `Tip: ${ex.notes}. `;
     });
   }
-  
   return script;
 };
 
-
+// HELPER: Convert Diet Data to Readable Text
 const formatDietForSpeech = (plan: any) => {
   if (!plan) return "No diet plan available.";
-  
   let script = "Here is your nutrition plan. ";
   if (plan.breakfast) script += `For Breakfast, have ${plan.breakfast.name}. `;
   if (plan.lunch) script += `For Lunch, have ${plan.lunch.name}. `;
   if (plan.dinner) script += `For Dinner, have ${plan.dinner.name}. `;
-  
   if (plan.snacks && Array.isArray(plan.snacks) && plan.snacks.length > 0) {
     script += `For snacks, you can have ${plan.snacks.map((s:any) => s.name).join(" or ")}. `;
   }
-  
   return script;
 };
 
 export function PlanDashboard({ planData, userData }: { planData: any, userData: any }) {
   const [motivation, setMotivation] = useState<{ quote: string; tips: string[] } | null>(null);
   const [isUpdatingMotivation, setIsUpdatingMotivation] = useState(false);
+  
+  // Ref for printing
+  const printRef = useRef<HTMLDivElement>(null);
 
+  // Setup React To Print
+  const handlePrint = useReactToPrint({
+    contentRef: printRef, 
+    documentTitle: `${userData.name}_Fitness_Plan`,
+  });
 
   const fetchMotivation = async () => {
     setIsUpdatingMotivation(true);
     const res = await generateMotivationAction(userData.name, userData.goal);
-    if (res.data) {
-        setMotivation(res.data);
-    }
+    if (res.data) setMotivation(res.data);
     setIsUpdatingMotivation(false);
   };
 
   useEffect(() => {
     fetchMotivation(); 
-
-    const intervalId = setInterval(() => {
-      fetchMotivation();
-    }, 60000); 
-
+    const intervalId = setInterval(() => fetchMotivation(), 60000); 
     return () => clearInterval(intervalId);
   }, [userData.name, userData.goal]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       
-      <div className="text-center space-y-2">
-        <h2 className="text-3xl font-bold">Your Personal Blueprint</h2>
-        <p className="text-muted-foreground">Designed for {userData.goal} • {userData.level}</p>
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="text-center md:text-left space-y-1">
+            <h2 className="text-3xl font-bold">Your Personal Blueprint</h2>
+            <p className="text-muted-foreground">Designed for {userData.goal} • {userData.level}</p>
+        </div>
+        <Button onClick={() => handlePrint()} variant="default" className="shadow-md">
+            <Download className="w-4 h-4 mr-2" />
+            Download PDF
+        </Button>
       </div>
 
+      {/* Live Motivation Banner */}
       <Card className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 border-indigo-100 relative overflow-hidden">
         {isUpdatingMotivation && (
             <div className="absolute top-2 right-2">
@@ -150,12 +152,85 @@ export function PlanDashboard({ planData, userData }: { planData: any, userData:
           <DietView plan={planData.dietPlan} />
         </TabsContent>
       </Tabs>
+
+      {/* HIDDEN PRINT CONTAINER 
+      */}
+      <div className="overflow-hidden h-0 w-0">
+        <div ref={printRef} className="p-8 bg-white text-black max-w-[800px] mx-auto">
+            {/* Print Header */}
+            <div className="text-center border-b pb-6 mb-6">
+                <h1 className="text-3xl font-bold text-slate-900">AI Fitness Blueprint</h1>
+                <p className="text-slate-500 mt-2">Prepared for {userData.name}</p>
+                <div className="flex justify-center gap-4 mt-4 text-sm text-slate-600">
+                    <span>{userData.goal}</span>
+                    <span>•</span>
+                    <span>{userData.level}</span>
+                    <span>•</span>
+                    <span>{userData.gender}, {userData.age}yo</span>
+                </div>
+            </div>
+
+            <div className="mb-8">
+                <h2 className="text-xl font-bold border-b-2 border-slate-800 pb-2 mb-4 flex items-center">
+                    <Dumbbell className="w-5 h-5 mr-2" /> Workout Routine
+                </h2>
+                {planData.workoutPlan?.map((day: any, i: number) => (
+                    <div key={i} className="mb-6 break-inside-avoid">
+                        <h3 className="font-bold text-lg bg-slate-100 p-2 mb-3">{day.day} - {day.focus}</h3>
+                        <table className="w-full text-sm text-left">
+                            <thead>
+                                <tr className="border-b text-slate-500">
+                                    <th className="py-2">Exercise</th>
+                                    <th className="py-2">Sets / Reps</th>
+                                    <th className="py-2">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {day.exercises?.map((ex: any, k: number) => (
+                                    <tr key={k} className="border-b border-slate-100">
+                                        <td className="py-2 font-medium">{ex.name}</td>
+                                        <td className="py-2">{ex.sets} x {ex.reps}</td>
+                                        <td className="py-2 text-slate-500 italic">{ex.notes}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ))}
+            </div>
+
+            <div className="mb-8 break-inside-avoid">
+                <h2 className="text-xl font-bold border-b-2 border-slate-800 pb-2 mb-4 flex items-center">
+                    <Utensils className="w-5 h-5 mr-2" /> Nutrition Plan
+                </h2>
+                <div className="space-y-4">
+                    <div className="border p-4 rounded">
+                        <strong className="text-emerald-700">Breakfast:</strong> {planData.dietPlan?.breakfast?.name}
+                        <p className="text-sm text-slate-600">{planData.dietPlan?.breakfast?.calories} • {planData.dietPlan?.breakfast?.macros}</p>
+                    </div>
+                    <div className="border p-4 rounded">
+                        <strong className="text-emerald-700">Lunch:</strong> {planData.dietPlan?.lunch?.name}
+                        <p className="text-sm text-slate-600">{planData.dietPlan?.lunch?.calories} • {planData.dietPlan?.lunch?.macros}</p>
+                    </div>
+                    <div className="border p-4 rounded">
+                        <strong className="text-emerald-700">Dinner:</strong> {planData.dietPlan?.dinner?.name}
+                        <p className="text-sm text-slate-600">{planData.dietPlan?.dinner?.calories} • {planData.dietPlan?.dinner?.macros}</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Print Footer */}
+            <div className="text-center text-xs text-slate-400 mt-12 pt-6 border-t">
+                Generated by AI Fitness Coach • {new Date().toLocaleDateString()}
+            </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-
 // Audio Player Component
+
 function AudioPlayerButton({ textToSpeak, label }: { textToSpeak: string, label: string }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -181,7 +256,6 @@ function AudioPlayerButton({ textToSpeak, label }: { textToSpeak: string, label:
         } else {
           audioRef.current.src = res.audio;
         }
-        
         await audioRef.current.play();
         setIsPlaying(true);
       } else {
@@ -209,13 +283,15 @@ function AudioPlayerButton({ textToSpeak, label }: { textToSpeak: string, label:
       ) : (
         <Volume2 className="w-4 h-4" />
       )}
-      {isLoading ? "Loading Audio..." : isPlaying ? "Stop Reading" : label}
+      {isLoading ? "Loading..." : isPlaying ? "Stop" : label}
     </Button>
   );
 }
 
+// ============================================
 // Workout Components
-
+// ============================================
+function WorkoutView({ plan }: { plan: any[] }) {
   if (!plan || !Array.isArray(plan)) return <p className="text-center text-muted-foreground py-10">No workout data available.</p>;
 
   return (
@@ -302,8 +378,9 @@ function ExerciseItem({ exercise }: { exercise: any }) {
   );
 }
 
+// ============================================
 // Diet Components
-
+// ============================================
 function DietView({ plan }: { plan: any }) {
   if (!plan) return <p className="text-center text-muted-foreground py-10">No diet data available.</p>;
 
