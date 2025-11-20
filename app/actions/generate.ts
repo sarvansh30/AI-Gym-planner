@@ -116,14 +116,17 @@ export async function generateImageAction(description: string, type: "workout" |
     
     const prompt = `${context} ${description}`;
 
+    // ATTEMPT 1: Google Gemini (High Quality)
     try {
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-image",
         contents: prompt,
       });
 
-      if (response.parts) {
-        for (const part of response.parts) {
+      // FIX: Access parts through candidates array to satisfy TypeScript
+      const candidates = response.candidates;
+      if (candidates && candidates[0]?.content?.parts) {
+        for (const part of candidates[0].content.parts) {
             if (part.inlineData) {
                 return { 
                     success: true, 
@@ -136,6 +139,7 @@ export async function generateImageAction(description: string, type: "workout" |
        console.warn("Gemini Image Gen Failed (Quota or Error). Switching to fallback.", geminiError.message);
     }
 
+    // ATTEMPT 2: Pollinations AI (Free Fallback)
     const encodedPrompt = encodeURIComponent(prompt);
     const fallbackUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?nologo=true`;
     
