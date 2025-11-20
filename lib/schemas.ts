@@ -31,16 +31,14 @@ export const dietaryPreferences = [
 import { z } from "zod";
 
 export const userProfileSchema = z.object({
-  // Personal Details
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   age: z.coerce.number().min(10).max(100, { message: "Please enter a valid age." }),
   gender: z.enum(["Male", "Female", "Other"]),
   
-  // Physical Stats
+
   height: z.coerce.number().min(50, { message: "Height in cm is required." }), 
   weight: z.coerce.number().min(20, { message: "Weight in kg is required." }), 
-  
-  // Preferences
+
   goal: z.enum(fitnessGoals, { errorMap: () => ({ message: "Please select a goal." }) }),
   level: z.enum(fitnessLevels),
   location: z.enum(workoutLocations),
