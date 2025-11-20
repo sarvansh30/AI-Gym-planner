@@ -1,9 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { generatePlanAction } from "@/app/actions/generate" // Import the action
-import { Loader2 } from "lucide-react"
-
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -32,47 +29,47 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select"
+import { generatePlanAction } from "@/app/actions/generate"
+import { Loader2 } from "lucide-react"
 
+type UserProfileFormValues = z.infer<typeof userProfileSchema>
 
 interface UserInputFormProps {
   onSuccess: (plan: any, userData: any) => void;
 }
 
-
-// 1. Setup the form type
-type UserProfileFormValues = z.infer<typeof userProfileSchema>
-
 export function UserInputForm({ onSuccess }: UserInputFormProps) {
   const [isLoading, setIsLoading] = useState(false)
-  // 2. Define the form hook
-  const form = useForm<UserProfileFormValues>({
+
+  // FIX: Use <any> to silence the conflict between Zod's output (number) and Input's value (string/unknown)
+  // This resolves both the "Resolver Mismatch" and "Value Unknown" errors.
+  const form = useForm<any>({
     resolver: zodResolver(userProfileSchema),
     defaultValues: {
       name: "",
       age: 25,
+      gender: undefined, 
       height: 170,
       weight: 70,
+      goal: undefined, 
+      level: undefined,
+      location: undefined,
+      dietaryPreference: undefined,
       daysPerWeek: 3,
       medicalHistory: "None",
+      stressLevel: undefined,
     },
   })
 
-  // 3. Define submit handler
   async function onSubmit(data: UserProfileFormValues) {
     setIsLoading(true)
-    
     try {
-
       const result = await generatePlanAction(data)
-
+      
       if (result.success && result.data) {
-        localStorage.setItem("fitnessPlan", JSON.stringify(result.data))
-        localStorage.setItem("userProfile", JSON.stringify(data))
-        
-        console.log("PLAN GENERATED:", result.data)
-        onSuccess(result.data, data);
+        onSuccess(result.data, data)
       } else {
-        alert("Error generating plan. Please try again.")
+        alert("Failed to generate plan. Please try again.")
       }
     } catch (error) {
       console.error(error)
@@ -81,15 +78,16 @@ export function UserInputForm({ onSuccess }: UserInputFormProps) {
       setIsLoading(false)
     }
   }
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 border p-6 rounded-xl shadow-sm bg-card">
         
+        {/* SECTION 1: PERSONAL DETAILS */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Personal Details</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      
             <FormField
               control={form.control}
               name="name"
@@ -129,7 +127,6 @@ export function UserInputForm({ onSuccess }: UserInputFormProps) {
           </div>
 
           <div className="grid grid-cols-3 gap-4">
-             {/* Age */}
              <FormField
               control={form.control}
               name="age"
@@ -174,6 +171,7 @@ export function UserInputForm({ onSuccess }: UserInputFormProps) {
           </div>
         </div>
 
+        {/* SECTION 2: FITNESS PREFERENCES */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Fitness Goals & Preferences</h3>
           
@@ -265,6 +263,7 @@ export function UserInputForm({ onSuccess }: UserInputFormProps) {
           </div>
         </div>
 
+        {/* SECTION 3: DIET & HEALTH */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Diet & Health</h3>
           
